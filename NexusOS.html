@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NexusOS Premium - One UI x WebOS Edition</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+      overflow: hidden;
+      background-color: #000;
+    }
+    /* Squircle - One UI Shape */
+    .squircle {
+      border-radius: 24%;
+    }
+    /* Glassmorphic Effects */
+    .glass {
+      background: rgba(10, 9, 18, 0.65);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-dark {
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    /* Dragging and Active state */
+    .dragging {
+      opacity: 0.8;
+      transform: scale(0.98);
+    }
+    .window-anim {
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .window-active {
+      z-index: 45 !important;
+      border-color: rgba(99, 102, 241, 0.35) !important;
+      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8), 0 0 15px rgba(99, 102, 241, 0.1);
+    }
+    /* Lockscreen slide animation */
+    .lockscreen-up {
+      transform: translateY(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    /* Aero Snap Preview style */
+    .snap-preview {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      background: rgba(99, 102, 241, 0.15);
+      border: 2px dashed rgba(99, 102, 241, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    /* Task view scaling */
+    .task-view-active {
+      filter: blur(2px);
+      transform: scale(0.96);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="w-screen h-screen relative bg-cover bg-center transition-all duration-700" id="desktop-body" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564');">
+
+  <!-- BRIGHTNESS OVERLAY -->
+  <div id="brightness-overlay" class="absolute inset-0 bg-black/0 pointer-events-none z-[100] transition-all duration-300"></div>
+
+  <!-- WINDOW SNAP PREVIEW LAYER -->
+  <div id="snap-preview-layer" class="absolute z-40 hidden rounded-2xl snap-preview"></div>
+
+  <!-- ==================== MÀN HÌNH KHÓA & CHỜ (Lock Screen) ==================== -->
+  <div id="lock-screen" class="fixed inset-0 z-[150] transition-all duration-700 ease-in-out flex flex-col justify-between p-12 text-white select-none bg-cover bg-center" style="background-image: radial-gradient(circle at center, #110d1e 0%, #030206 100%);">
+    <div class="absolute inset-0 bg-black/35 backdrop-blur-[15px] z-0"></div>
+    <div class="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none"></div>
+
+    <!-- Top icon -->
+    <div class="w-full flex justify-center z-10 mt-4">
+      <div class="flex flex-col items-center space-y-1">
+        <i data-lucide="lock" class="w-5 h-5 text-white/60 animate-pulse"></i>
+        <span class="text-[10px] tracking-widest text-white/40 uppercase font-bold">Bảo mật hệ thống</span>
+      </div>
+    </div>
+
+    <!-- Center clock -->
+    <div class="w-full flex flex-col items-center justify-center text-center z-10 my-auto">
+      <h1 class="text-8xl font-extralight tracking-tight text-white/95 drop-shadow-lg" id="lock-clock">12:00</h1>
+      <p class="text-lg font-light text-white/70 mt-3 tracking-wide" id="lock-date">Thứ Sáu, ngày 12 tháng 6 năm 2026</p>
+    </div>
+
+    <!-- Bottom profile card and unlock triggers -->
+    <div class="w-full flex flex-col items-center justify-end z-10 mb-6">
+      <div id="lock-user-card" class="flex flex-col items-center space-y-3 transition-all duration-300 transform translate-y-4 opacity-0 hidden">
+        <div class="w-16 h-16 rounded-full border-2 border-white/20 bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center shadow-xl">
+          <i data-lucide="user" class="w-8 h-8 text-white"></i>
+        </div>
+        <div class="text-center">
+          <h3 class="font-semibold text-sm">Người dùng Galaxy</h3>
+          <p class="text-[10px] text-white/40 mt-0.5">Nhập mã PIN để mở khóa (PIN mặc định: 1234 hoặc nhấn Enter)</p>
+        </div>
+        <form onsubmit="handleUnlockSubmit(event)" class="flex flex-col items-center space-y-2 mt-2">
+          <input type="password" id="pin-input" maxlength="4" placeholder="••••" class="bg-white/5 border border-white/10 rounded-lg py-1 px-3 text-center text-sm w-32 focus:outline-none focus:border-blue-500 transition tracking-widest text-white">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs py-1 px-4 rounded-lg transition shadow-md">Xác nhận</button>
+        </form>
+      </div>
+
+      <div id="tap-to-unlock" class="text-center cursor-pointer hover:opacity-100 transition-opacity duration-300" onclick="showPinInput()">
+        <p class="text-xs text-white/50 tracking-wider animate-bounce">Click hoặc ấn phím bất kỳ để tiếp tục</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TASK VIEW MULTITASKING OVERLAY ==================== -->
+  <div id="task-view-overlay" class="fixed inset-0 bg-[#07060d]/85 backdrop-blur-[35px] z-[120] hidden opacity-0 transition-opacity duration-300 flex flex-col p-12">
+    <div class="flex items-center justify-between border-b border-white/10 pb-6 mb-8 select-none">
+      <div class="flex items-center space-x-3 text-white">
+        <i data-lucide="layout-grid" class="text-blue-400 w-6 h-6"></i>
+        <h2 class="font-bold text-xl tracking-wide">Trình quản lý đa nhiệm (Task View)</h2>
+      </div>
+      <button class="bg-white/10 hover:bg-red-600 text-white p-2 rounded-full transition" onclick="toggleTaskView()">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <div id="task-view-grid" class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto p-2">
+      <!-- Injected by JS -->
+    </div>
+  </div>
+
+  <!-- SYSTEM WRAPPER CONTAINER -->
+  <div id="system-wrapper" class="absolute inset-0 flex flex-col justify-between transition-all duration-300">
+    
+    <!-- ==================== TOP MENUBAR - 3 DISTINCT FLOATING PILLS (WebOS style) ==================== -->
+    <header class="w-full absolute top-2 left-0 right-0 h-10 px-4 flex items-center justify-between z-30 select-none pointer-events-none">
+      <!-- Pill 1: System menu dropdown triggers -->
+      <div class="glass-dark rounded-full h-9 px-4 flex items-center space-x-4 text-[13px] text-white pointer-events-auto shadow-md">
+        <div class="flex items-center space-x-1 cursor-pointer hover:bg-white/10 px-1.5 py-1 rounded-lg transition" onclick="toggleMenu('system-menu')">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> NexusOS
+        </div>
+        <div class="relative group">
+          <span class="cursor-pointer font-semibold hover:bg-white/10 px-2 py-1 rounded-lg transition">Tệp</span>
+          <div class="absolute left-0 mt-2 w-48 glass rounded-xl shadow-2xl hidden group-hover:block py-1 text-xs border border-white/10 z-[100]">
+            <button onclick="openApp('files')" class="w-full text-left px-4 py-2 hover:bg-blue-600 text-white rounded-t-lg flex items-center gap-2"><i data-lucide="folder-open" class="w-3.5 h-3.5"></i> Bộ sưu tập</button>
+            <button onclick="openApp('browser')" class="w-full text-left px-4 py-2 hover:bg-blue-600 text-white flex items-center gap-2"><i data-lucide="globe" class="w-3.5 h-3.5"></i> Trình duyệt mới</button>
+            <hr class="border-white/10 my-1">
+            <button onclick="lockSystem()" class="w-full text-left px-4 py-2 hover:bg-red-600 text-white rounded-b-lg flex items-center gap-2"><i data-lucide="lock" class="w-3.5 h-3.5"></i> Khóa màn hình</button>
+          </div>
+        </div>
+        <div class="relative group">
+          <span class="cursor-pointer hover:bg-white/10 px-2 py-1 rounded-lg transition">Sửa</span>
+          <div class="absolute left-0 mt-2 w-48 glass rounded-xl shadow-2xl hidden group-hover:block py-1 text-xs border border-white/10 z-[100]">
+            <a href="#" class="block px-4 py-2 hover:bg-blue-600 text-white">Hoàn tác (Ctrl+Z)</a>
+            <a href="#" class="block px-4 py-2 hover:bg-blue-600 text-white">Làm lại (Ctrl+Y)</a>
+          </div>
+        </div>
+        <div class="relative group">
+          <span class="cursor-pointer hover:bg-white/10 px-2 py-1 rounded-lg transition">Xem</span>
+          <div class="absolute left-0 mt-2 w-48 glass rounded-xl shadow-2xl hidden group-hover:block py-1 text-xs border border-white/10 z-[100]">
+            <a href="#" class="block px-4 py-2 hover:bg-blue-600 text-white" onclick="toggleFullscreen()">Chế độ toàn màn hình</a>
+            <a href="#" class="block px-4 py-2 hover:bg-blue-600 text-white" onclick="changeBackground()">Đổi hình nền...</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pill 2: Time Clock Capsule (Middle Center) -->
+      <div class="glass-dark rounded-full h-9 px-6 flex items-center justify-center text-[13px] font-semibold text-white pointer-events-auto shadow-md cursor-pointer hover:bg-white/10 transition" onclick="toggleWidgetPanel()">
+        <span id="top-clock">12:00 PM</span>
+      </div>
+
+      <!-- Pill 3: Control System Capsule (Right side) -->
+      <div class="glass-dark rounded-full h-9 px-4 flex items-center space-x-3 text-sm text-white pointer-events-auto shadow-md">
+        <!-- Bluetooth -->
+        <button class="hover:bg-white/10 p-1 rounded-lg transition flex items-center justify-center" id="btn-bluetooth" title="Bluetooth">
+          <i data-lucide="bluetooth" class="w-4 h-4 text-blue-400" id="icon-bluetooth"></i>
+        </button>
+        <!-- Search icon -->
+        <button class="hover:bg-white/10 p-1 rounded-lg transition flex items-center justify-center" onclick="toggleSpotlight()" title="Tìm kiếm">
+          <i data-lucide="search" class="w-4 h-4 text-slate-300"></i>
+        </button>
+        <!-- Wifi -->
+        <button class="hover:bg-white/10 p-1 rounded-lg transition flex items-center justify-center" id="btn-wifi" title="Mạng Wifi">
+          <i data-lucide="wifi" class="w-4 h-4 text-emerald-400" id="icon-wifi"></i>
+        </button>
+        <!-- Control Center Panel trigger -->
+        <button class="hover:bg-white/10 p-1 rounded-lg transition flex items-center justify-center" onclick="toggleMenu('control-center')" title="Trung tâm điều khiển">
+          <i data-lucide="sliders" class="w-4 h-4"></i>
+        </button>
+        <!-- Battery Percentage -->
+        <div class="flex items-center space-x-1 hover:bg-white/10 px-2 py-0.5 rounded-lg transition cursor-pointer" onclick="openApp('settings'); selectSettingTab('battery-tab');">
+          <span class="text-[11px] font-bold text-white/90" id="battery-level-text">98%</span>
+          <i data-lucide="battery-charging" class="w-4 h-4 text-yellow-400"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- SYSTEM DROPDOWN MENU -->
+    <div id="system-menu" class="hidden absolute top-14 left-4 w-56 glass-dark rounded-2xl p-2 shadow-2xl text-white text-sm z-50">
+      <div class="px-3 py-2 border-b border-white/10 mb-1">
+        <div class="font-bold text-blue-400">NexusOS Premium</div>
+        <div class="text-[10px] opacity-60">One UI x WebOS Edition</div>
+      </div>
+      <button onclick="openApp('settings'); closeAllMenus();" class="w-full text-left px-3 py-2 hover:bg-white/10 rounded-xl flex items-center gap-2"><i data-lucide="settings" class="w-4 h-4"></i> Cài đặt Hệ thống</button>
+      <button onclick="openApp('store'); closeAllMenus();" class="w-full text-left px-3 py-2 hover:bg-white/10 rounded-xl flex items-center gap-2"><i data-lucide="shopping-bag" class="w-4 h-4"></i> Cửa hàng Galaxy App</button>
+      <hr class="border-white/10 my-1">
+      <button onclick="restartSystem()" class="w-full text-left px-3 py-2 hover:bg-white/10 text-yellow-400 rounded-xl flex items-center gap-2"><i data-lucide="rotate-cw" class="w-4 h-4"></i> Khởi động lại</button>
+      <button onclick="shutDownSystem()" class="w-full text-left px-3 py-2 hover:bg-white/10 text-red-400 rounded-xl flex items-center gap-2"><i data-lucide="power" class="w-4 h-4"></i> Tắt máy</button>
+    </div>
+
+    <!-- CONTROL CENTER PANEL -->
+    <div id="control-center" class="hidden absolute top-14 right-4 w-80 glass-dark rounded-3xl p-4 shadow-2xl text-white z-50 select-none">
+      <h3 class="text-sm font-bold mb-3 flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4 text-blue-400"></i> Trung tâm điều khiển</h3>
+      
+      <!-- Quick Toggles -->
+      <div class="grid grid-cols-4 gap-2 mb-4 text-[11px] text-center">
+        <div onclick="toggleQuickSetting('wifi')" id="btn-qs-wifi" class="bg-blue-600 p-2.5 rounded-2xl cursor-pointer hover:brightness-110 flex flex-col items-center justify-center gap-1 transition">
+          <i data-lucide="wifi" class="w-5 h-5"></i><span>Wi-Fi</span>
+        </div>
+        <div onclick="toggleQuickSetting('bluetooth')" id="btn-qs-bluetooth" class="bg-blue-600 p-2.5 rounded-2xl cursor-pointer hover:brightness-110 flex flex-col items-center justify-center gap-1 transition">
+          <i data-lucide="bluetooth" class="w-5 h-5"></i><span>Bluetooth</span>
+        </div>
+        <div onclick="toggleQuickSetting('battery-saver')" id="btn-qs-battery" class="bg-white/10 p-2.5 rounded-2xl cursor-pointer hover:bg-white/20 flex flex-col items-center justify-center gap-1 transition">
+          <i data-lucide="battery-medium" class="w-5 h-5 text-yellow-400"></i><span>T.Kiệm Pin</span>
+        </div>
+        <div onclick="toggleQuickSetting('darkmode')" id="btn-qs-dark" class="bg-blue-600 p-2.5 rounded-2xl cursor-pointer hover:brightness-110 flex flex-col items-center justify-center gap-1 transition">
+          <i data-lucide="moon" class="w-5 h-5"></i><span>Dark Mode</span>
+        </div>
+      </div>
+
+      <!-- Sliders -->
+      <div class="space-y-3">
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-xs opacity-80">
+            <span class="flex items-center gap-1"><i data-lucide="sun" class="w-3.5 h-3.5 text-orange-400"></i> Độ sáng màn hình</span>
+            <span id="txt-brightness">100%</span>
+          </div>
+          <input type="range" min="15" max="100" value="100" oninput="adjustBrightness(this.value)" class="w-full accent-blue-500 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer">
+        </div>
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-xs opacity-80">
+            <span class="flex items-center gap-1"><i data-lucide="volume-2" class="w-3.5 h-3.5 text-blue-400"></i> Âm lượng</span>
+            <span id="txt-volume">75%</span>
+          </div>
+          <input type="range" min="0" max="100" value="75" oninput="adjustVolume(this.value)" class="w-full accent-blue-500 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer">
+        </div>
+      </div>
+
+      <!-- Settings system button -->
+      <div class="mt-4 pt-3 border-t border-white/10 flex space-x-2">
+        <button onclick="openApp('settings'); closeAllMenus();" class="flex-1 py-2 bg-white/10 hover:bg-white/15 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"><i data-lucide="settings" class="w-4.5 h-4.5"></i> Cài đặt</button>
+        <button onclick="lockSystem(); closeAllMenus();" class="flex-1 py-2 bg-rose-600/90 hover:bg-rose-500 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"><i data-lucide="lock" class="w-4.5 h-4.5"></i> Khóa máy</button>
+      </div>
+    </div>
+
+    <!-- ==================== PINNED WIDGETS (Desktop layout) ==================== -->
+    <div class="absolute top-16 right-6 w-72 flex flex-col gap-4 z-10 pointer-events-auto hidden lg:flex select-none">
+      
+      <!-- Widget 1: Calendar -->
+      <div class="glass-dark rounded-3xl p-4 text-white shadow-lg border border-white/15">
+        <div class="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="calendar" class="w-4 h-4 text-rose-400"></i>
+            <span class="text-xs font-bold uppercase tracking-wider">Lịch Tháng</span>
+          </div>
+          <span class="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full font-semibold" id="widget-month-label">Tháng 6</span>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-white/50 mb-1">
+          <div>CN</div><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-xs" id="widget-calendar-days">
+          <!-- Calendar Days JS -->
+        </div>
+      </div>
+
+      <!-- Widget 2: Device & Resources -->
+      <div class="glass-dark rounded-3xl p-4 text-white shadow-lg border border-white/15">
+        <div class="flex items-center gap-1.5 mb-3 pb-2 border-b border-white/10">
+          <i data-lucide="cpu" class="w-4 h-4 text-blue-400"></i>
+          <span class="text-xs font-bold uppercase tracking-wider">Hiệu năng & Tài nguyên</span>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="flex items-center gap-1"><i data-lucide="battery" class="w-3.5 h-3.5 text-yellow-400"></i> Thời lượng pin</span>
+              <span class="font-semibold" id="widget-battery-percent">98%</span>
+            </div>
+            <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+              <div id="widget-battery-bar" class="bg-yellow-400 h-full rounded-full transition-all duration-500" style="width: 98%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="flex items-center gap-1"><i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i> RAM đã dùng</span>
+              <span class="font-semibold" id="widget-ram-percent">40%</span>
+            </div>
+            <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+              <div id="widget-ram-bar" class="bg-emerald-400 h-full rounded-full transition-all duration-500" style="width: 40%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== DESKTOP AREA ==================== -->
+    <div class="absolute top-14 bottom-24 left-0 right-0 lg:right-80 p-6 z-10 grid grid-flow-col auto-cols-[100px] grid-rows-[repeat(auto-fill,110px)] gap-x-2 gap-y-4 justify-start items-start" id="desktop-grid">
+      <!-- App Icons (Rebuilt dynamically with premium squircle gradients) -->
+      <div class="desktop-icon flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-white/10 cursor-pointer text-white transition select-none group text-center" draggable="true" ondragstart="dragIcon(event)" onclick="openApp('browser')">
+        <div class="w-14 h-14 bg-gradient-to-tr from-blue-500 to-cyan-400 squircle flex items-center justify-center shadow-lg transition group-hover:scale-105">
+          <i data-lucide="globe" class="w-7 h-7 text-white"></i>
+        </div>
+        <span class="text-xs mt-1.5 font-medium drop-shadow-md truncate w-20">Trình duyệt</span>
+      </div>
+
+      <div class="desktop-icon flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-white/10 cursor-pointer text-white transition select-none group text-center" draggable="true" ondragstart="dragIcon(event)" onclick="openApp('files')">
+        <div class="w-14 h-14 bg-gradient-to-tr from-amber-500 to-yellow-400 squircle flex items-center justify-center shadow-lg transition group-hover:scale-105">
+          <i data-lucide="folder" class="w-7 h-7 text-white"></i>
+        </div>
+        <span class="text-xs mt-1.5 font-medium drop-shadow-md truncate w-20">Bộ sưu tập</span>
+      </div>
+
+      <div class="desktop-icon flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-white/10 cursor-pointer text-white transition select-none group text-center" draggable="true" ondragstart="dragIcon(event)" onclick="openApp('store')">
+        <div class="w-14 h-14 bg-gradient-to-tr from-pink-500 to-purple-500 squircle flex items-center justify-center shadow-lg transition group-hover:scale-105">
+          <i data-lucide="shopping-bag" class="w-7 h-7 text-white"></i>
+        </div>
+        <span class="text-xs mt-1.5 font-medium drop-shadow-md truncate w-20">Galaxy Store</span>
+      </div>
+
+      <div class="desktop-icon flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-white/10 cursor-pointer text-white transition select-none group text-center" draggable="true" ondragstart="dragIcon(event)" onclick="openApp('settings')">
+        <div class="w-14 h-14 bg-gradient-to-tr from-gray-500 to-slate-400 squircle flex items-center justify-center shadow-lg transition group-hover:scale-105">
+          <i data-lucide="settings" class="w-7 h-7 text-white"></i>
+        </div>
+        <span class="text-xs mt-1.5 font-medium drop-shadow-md truncate w-20">Cài đặt</span>
+      </div>
+
+      <div class="desktop-icon flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-white/10 cursor-pointer text-white transition select-none group text-center" draggable="true" ondragstart="dragIcon(event)" onclick="openApp('calculator')">
+        <div class="w-14 h-14 bg-gradient-to-tr from-emerald-500 to-teal-400 squircle flex items-center justify-center shadow-lg transition group-hover:scale-105">
+          <i data-lucide="calculator" class="w-7 h-7 text-white"></i>
+        </div>
+        <span class="text-xs mt-1.5 font-medium drop-shadow-md truncate w-20">Máy tính</span>
+      </div>
+    </div>
+
+    <!-- ==================== WINDOW MANAGER ==================== -->
+
+    <!-- WINDOW: SETTINGS -->
+    <div id="win-settings" class="hidden absolute glass-dark text-white rounded-3xl shadow-2xl overflow-hidden border border-white/10 window-anim z-20 flex flex-col min-w-[450px] min-h-[350px]" style="width: 750px; height: 500px; left: 10%; top: 15%;">
+      <div class="h-12 bg-white/5 border-b border-white/10 flex items-center justify-between px-4 cursor-move shrink-0 select-none relative" id="settings-header" onmousedown="startDrag(event, 'win-settings')">
+        <div class="flex items-center space-x-2 z-10">
+          <i data-lucide="settings" class="w-4 h-4 text-slate-300"></i>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Cài đặt Hệ thống</span>
+        </div>
+        <!-- Center Controls alignment as requested -->
+        <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2 z-10">
+          <button onclick="minimizeWindow('win-settings')" class="w-3.5 h-3.5 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center text-[8px] text-emerald-950 font-bold transition shadow"></button>
+          <button onclick="maximizeWindow('win-settings')" class="w-3.5 h-3.5 rounded-full bg-amber-500 hover:bg-amber-400 flex items-center justify-center text-[8px] text-amber-950 font-bold transition shadow"></button>
+          <button onclick="closeApp('settings')" class="w-3.5 h-3.5 rounded-full bg-rose-500 hover:bg-rose-400 flex items-center justify-center text-[8px] text-rose-950 font-bold transition shadow"></button>
+        </div>
+        <div class="w-16"></div>
+      </div>
+      <div class="flex flex-1 overflow-hidden relative">
+        <div class="w-48 bg-black/20 border-r border-white/5 p-3 flex flex-col gap-1.5 overflow-y-auto shrink-0 select-none text-xs">
+          <button onclick="selectSettingTab('connection-tab')" id="tab-btn-connection" class="setting-tab-btn flex items-center gap-3 w-full px-3 py-2.5 rounded-2xl bg-white/10 text-white font-semibold text-left transition">
+            <span class="p-1.5 rounded-xl bg-blue-500"><i data-lucide="wifi" class="w-4 h-4"></i></span> Kết nối
+          </button>
+          <button onclick="selectSettingTab('display-tab')" id="tab-btn-display" class="setting-tab-btn flex items-center gap-3 w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-white/80 text-left transition">
+            <span class="p-1.5 rounded-xl bg-orange-500"><i data-lucide="sun" class="w-4 h-4"></i></span> Màn hình
+          </button>
+          <button onclick="selectSettingTab('battery-tab')" id="tab-btn-battery" class="setting-tab-btn flex items-center gap-3 w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-white/80 text-left transition">
+            <span class="p-1.5 rounded-xl bg-yellow-500"><i data-lucide="battery" class="w-4 h-4"></i></span> Chăm sóc pin
+          </button>
+          <button onclick="selectSettingTab('software-tab')" id="tab-btn-software" class="setting-tab-btn flex items-center gap-3 w-full px-3 py-2.5 rounded-2xl hover:bg-white/5 text-white/80 text-left transition">
+            <span class="p-1.5 rounded-xl bg-purple-500"><i data-lucide="info" class="w-4 h-4"></i></span> Thông tin phần mềm
+          </button>
+        </div>
+        <div class="flex-1 p-5 overflow-y-auto" id="settings-content-area">
+          <!-- Connection tab view -->
+          <div id="setting-panel-connection" class="space-y-4">
+            <h2 class="text-base font-bold mb-3 flex items-center gap-2"><i data-lucide="wifi" class="w-4 h-4 text-blue-500"></i> Cài đặt kết nối</h2>
+            <div class="glass-card rounded-2xl p-4 flex items-center justify-between">
+              <div class="flex flex-col">
+                <span class="text-sm font-semibold">Wi-Fi mạng không dây</span>
+                <span class="text-xs opacity-60" id="setting-wifi-sub">Đã kết nối với "Galaxy_Network"</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked onchange="toggleSettingState('wifi', this.checked)" class="sr-only peer">
+                <div class="w-11 h-6 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          </div>
+          <!-- Display Tab view (Wallpaper management) -->
+          <div id="setting-panel-display" class="hidden space-y-4">
+            <h2 class="text-base font-bold mb-3 flex items-center gap-2"><i data-lucide="sun" class="w-4 h-4 text-orange-400"></i> Thiết lập màn hình</h2>
+            <div class="glass-card rounded-2xl p-4 space-y-3">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-semibold">Độ sáng màn hình</span>
+                <span id="setting-bright-percent" class="bg-white/10 px-2 py-0.5 rounded-full">100%</span>
+              </div>
+              <input type="range" min="15" max="100" value="100" oninput="adjustBrightness(this.value)" id="setting-bright-slider" class="w-full accent-blue-500 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <!-- Dynamic wallpapers gallery -->
+            <div class="glass-card rounded-2xl p-4">
+              <span class="text-xs font-bold block mb-3">Hình nền hệ thống</span>
+              <div class="grid grid-cols-3 gap-2" id="settings-wallpaper-grid">
+                <!-- Wallpapers populated by JS -->
+              </div>
+            </div>
+          </div>
+          <div id="setting-panel-battery" class="hidden space-y-4">
+            <h2 class="text-base font-bold mb-3 flex items-center gap-2"><i data-lucide="battery" class="w-4 h-4 text-yellow-400"></i> Chăm sóc Pin & Thiết bị</h2>
+            <div class="grid grid-cols-2 gap-3 text-center">
+              <div class="glass-card rounded-2xl p-4">
+                <span class="text-[10px] opacity-60 block mb-1">DUNG LƯỢNG PIN</span>
+                <div class="text-xl font-bold text-yellow-400" id="setting-bat-val">98%</div>
+              </div>
+              <div class="glass-card rounded-2xl p-4">
+                <span class="text-[10px] opacity-60 block mb-1">RAM KHẢ DỤNG</span>
+                <div class="text-xl font-bold text-emerald-400">4.8 GB</div>
+              </div>
+            </div>
+          </div>
+          <div id="setting-panel-software" class="hidden space-y-4">
+            <div class="text-center py-6">
+              <h2 class="text-xl font-bold text-white">NexusOS Premium</h2>
+              <p class="text-xs opacity-50">One UI x WebOS v2.5 Desktop Build</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="resize-handle" onmousedown="startResize(event, 'win-settings')"></div>
+    </div>
+
+    <!-- WINDOW: FILES -->
+    <div id="win-files" class="hidden absolute glass-dark text-white rounded-3xl shadow-2xl overflow-hidden border border-white/10 window-anim z-20 flex flex-col min-w-[450px] min-h-[350px]" style="width: 780px; height: 500px; left: 15%; top: 12%;">
+      <div class="h-12 bg-white/5 border-b border-white/10 flex items-center justify-between px-4 cursor-move shrink-0 select-none relative" id="files-header" onmousedown="startDrag(event, 'win-files')">
+        <div class="flex items-center space-x-2 z-10">
+          <i data-lucide="folder" class="w-4 h-4 text-amber-400"></i>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Bộ Sưu Tập Tệp</span>
+        </div>
+        <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2 z-10">
+          <button onclick="minimizeWindow('win-files')" class="w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow"></button>
+          <button onclick="maximizeWindow('win-files')" class="w-3.5 h-3.5 rounded-full bg-amber-500 flex items-center justify-center shadow"></button>
+          <button onclick="closeApp('files')" class="w-3.5 h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow"></button>
+        </div>
+        <div class="w-16"></div>
+      </div>
+      <div class="h-10 bg-white/2 border-b border-white/5 flex items-center px-4 justify-between shrink-0 text-xs">
+        <span class="bg-white/5 px-2.5 py-1 rounded-xl text-[11px] flex items-center gap-1"><i data-lucide="laptop" class="w-3.5 h-3.5 opacity-60"></i> Thiết bị > <span id="current-path-label" class="font-semibold text-amber-400">Ảnh</span></span>
+      </div>
+      <div class="flex flex-1 overflow-hidden relative">
+        <div class="w-40 bg-black/15 border-r border-white/5 p-2 flex flex-col gap-1 shrink-0 text-xs select-none">
+          <button onclick="selectFilesTab('images')" id="file-tab-images" class="file-tab-btn flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 text-white font-semibold text-left transition">
+            <i data-lucide="image" class="w-4 h-4 text-emerald-400"></i> Ảnh (Gallery)
+          </button>
+          <button onclick="selectFilesTab('documents')" id="file-tab-documents" class="file-tab-btn flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 text-white/70 text-left transition">
+            <i data-lucide="file-text" class="w-4 h-4 text-purple-400"></i> Tài liệu (Docs)
+          </button>
+        </div>
+        <div class="flex-1 p-4 overflow-y-auto" id="files-grid-area"></div>
+      </div>
+      <div class="resize-handle" onmousedown="startResize(event, 'win-files')"></div>
+    </div>
+
+    <!-- WINDOW: BROWSER WITH TAB SYSTEM -->
+    <div id="win-browser" class="hidden absolute glass-dark text-white rounded-3xl shadow-2xl overflow-hidden border border-white/10 window-anim z-20 flex flex-col min-w-[500px] min-h-[350px]" style="width: 820px; height: 530px; left: 16%; top: 14%;">
+      <div class="h-12 bg-white/5 border-b border-white/10 flex items-center justify-between px-4 cursor-move shrink-0 select-none relative" id="browser-header" onmousedown="startDrag(event, 'win-browser')">
+        <div class="flex items-center space-x-2 z-10">
+          <i data-lucide="globe" class="w-4 h-4 text-blue-400"></i>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Trình Duyệt Web</span>
+        </div>
+        <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2 z-10">
+          <button onclick="minimizeWindow('win-browser')" class="w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center shadow"></button>
+          <button onclick="maximizeWindow('win-browser')" class="w-3.5 h-3.5 rounded-full bg-amber-500 flex items-center justify-center shadow"></button>
+          <button onclick="closeApp('browser')" class="w-3.5 h-3.5 rounded-full bg-rose-500 flex items-center justify-center shadow"></button>
+        </div>
+        <div class="w-16"></div>
+      </div>
+      <div class="h-10 bg-black/20 border-b border-white/5 flex items-center px-4 justify-between shrink-0 select-none">
+        <div class="flex items-center space-x-1 overflow-x-auto max-w-[85%] py-1" id="browser-tabs-container"></div>
+        <button onclick="createNewBrowserTab()" class="p-1 hover:bg-white/10 rounded-lg transition text-slate-300"><i data-lucide="plus" class="w-4 h-4"></i></button>
+      </div>
+      <div class="h-10 bg-white/2 border-b border-white/5 flex items-center px-4 justify-between shrink-0 select-none">
+        <div class="flex items-center space-x-3 w-full">
+          <div class="flex space-x-1.5">
+            <button onclick="reloadBrowserTab()" class="p-1 hover:bg-white/10 rounded-lg transition"><i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i></button>
+          </div>
+          <div class="relative flex-1">
+            <input type="text" id="browser-url-input" value="https://www.google.com/search?igu=1" onkeydown="if(event.key==='Enter') loadIframeUrl(this.value)" class="w-full bg-white/10 text-xs rounded-xl pl-8 pr-12 py-1 text-white border border-white/10 focus:outline-none">
+            <i data-lucide="lock" class="w-3 h-3 absolute left-3 top-2.5 text-emerald-400"></i>
+          </div>
+          <button onclick="loadIframeUrl(document.getElementById('browser-url-input').value)" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-[10px] rounded-lg font-bold transition">Đi</button>
+        </div>
+      </div>
+      <div class="flex-1 bg-white relative overflow-hidden">
+        <iframe id="browser-iframe" src="https://www.google.com/search?igu=1" class="w-full h-full border-0 bg-white"></iframe>
+      </div>
+      <div class="resize-handle" onmousedown="startResize(event, 'win-browser')"></div>
+    </div>
+
+    <!-- WINDOW: CALCULATOR -->
+    <div id="win-calculator" class="hidden absolute glass-dark text-white rounded-3xl shadow-2xl overflow-hidden border border-white/10 window-anim z-20 flex flex-col min-w-[280px] min-h-[380px]" style="width: 320px; height: 460px; left: 30%; top: 20%;">
+      <div class="h-11 bg-white/5 border-b border-white/10 flex items-center justify-between px-4 cursor-move shrink-0 select-none relative" id="calc-header" onmousedown="startDrag(event, 'win-calculator')">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Máy tính</span>
+        <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2 z-10">
+          <button onclick="minimizeWindow('win-calculator')" class="w-3 h-3 rounded-full bg-emerald-500 shadow"></button>
+          <button onclick="closeApp('calculator')" class="w-3 h-3 rounded-full bg-rose-500 shadow"></button>
+        </div>
+        <div class="w-6"></div>
+      </div>
+      <div class="flex-1 flex flex-col p-4 bg-slate-950/80">
+        <div class="flex-1 flex flex-col justify-end items-end pb-4 px-2">
+          <div id="calc-history" class="text-xs opacity-40"></div>
+          <div id="calc-display" class="text-3xl font-light">0</div>
+        </div>
+        <div class="grid grid-cols-4 gap-2 text-sm font-semibold">
+          <button onclick="pressCalc('C')" class="h-11 rounded-2xl bg-white/10 hover:bg-white/20 text-red-400 transition">C</button>
+          <button onclick="pressCalc('()')" class="h-11 rounded-2xl bg-white/10 hover:bg-white/20 text-emerald-400 transition">()</button>
+          <button onclick="pressCalc('%')" class="h-11 rounded-2xl bg-white/10 hover:bg-white/20 text-emerald-400 transition">%</button>
+          <button onclick="pressCalc('/')" class="h-11 rounded-2xl bg-emerald-500/20 text-emerald-300 transition">/</button>
+
+          <button onclick="pressCalc('7')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">7</button>
+          <button onclick="pressCalc('8')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">8</button>
+          <button onclick="pressCalc('9')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">9</button>
+          <button onclick="pressCalc('*')" class="h-11 rounded-2xl bg-emerald-500/20 text-emerald-300 transition">×</button>
+
+          <button onclick="pressCalc('4')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">4</button>
+          <button onclick="pressCalc('5')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">5</button>
+          <button onclick="pressCalc('6')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">6</button>
+          <button onclick="pressCalc('-')" class="h-11 rounded-2xl bg-emerald-500/20 text-emerald-300 transition">-</button>
+
+          <button onclick="pressCalc('1')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">1</button>
+          <button onclick="pressCalc('2')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">2</button>
+          <button onclick="pressCalc('3')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">3</button>
+          <button onclick="pressCalc('+')" class="h-11 rounded-2xl bg-emerald-500/20 text-emerald-300 transition">+</button>
+
+          <button onclick="pressCalc('+/-')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">+/-</button>
+          <button onclick="pressCalc('0')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">0</button>
+          <button onclick="pressCalc('.')" class="h-11 rounded-2xl bg-white/5 hover:bg-white/15 transition">.</button>
+          <button onclick="pressCalc('=')" class="h-11 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition">=</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WINDOW: STORE (Galaxy Store) -->
+    <div id="win-store" class="hidden absolute glass-dark text-white rounded-3xl shadow-2xl overflow-hidden border border-white/10 window-anim z-20 flex flex-col min-w-[450px] min-h-[350px]" style="width: 800px; height: 530px; left: 12%; top: 10%;">
+      <div class="h-12 bg-white/5 border-b border-white/10 flex items-center justify-between px-4 cursor-move shrink-0 select-none relative" id="store-header" onmousedown="startDrag(event, 'win-store')">
+        <div class="flex items-center space-x-2 z-10">
+          <i data-lucide="shopping-bag" class="w-4 h-4 text-pink-400"></i>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Galaxy Store</span>
+        </div>
+        <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-2 z-10">
+          <button onclick="minimizeWindow('win-store')" class="w-3.5 h-3.5 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center shadow"></button>
+          <button onclick="maximizeWindow('win-store')" class="w-3.5 h-3.5 rounded-full bg-amber-500 hover:bg-amber-400 flex items-center justify-center shadow"></button>
+          <button onclick="closeApp('store')" class="w-3.5 h-3.5 rounded-full bg-rose-500 hover:bg-rose-400 flex items-center justify-center shadow"></button>
+        </div>
+        <div class="w-16"></div>
+      </div>
+      <div class="flex flex-1 overflow-hidden relative text-xs">
+        <div class="w-44 bg-black/20 border-r border-white/5 p-3 flex flex-col gap-1.5 shrink-0 select-none">
+          <button onclick="selectStoreCategory('all')" id="store-cat-all" class="store-cat-btn flex items-center gap-2.5 w-full px-3 py-2 rounded-xl bg-white/10 text-white font-semibold text-left transition">
+            <i data-lucide="grid" class="w-4 h-4 text-pink-400"></i> Tất cả ứng dụng
+          </button>
+        </div>
+        <div class="flex-1 p-5 overflow-y-auto">
+          <div class="grid grid-cols-2 gap-4" id="store-apps-grid"></div>
+        </div>
+      </div>
+      <div class="resize-handle" onmousedown="startResize(event, 'win-store')"></div>
+    </div>
+
+    <!-- ==================== SPOTLIGHT SEARCH SYSTEM ==================== -->
+    <div id="spotlight" class="hidden absolute inset-0 z-50 flex items-start justify-center pt-32 bg-black/40 backdrop-blur-sm">
+      <div class="w-[500px] glass-dark rounded-3xl p-3 shadow-2xl border border-white/15 text-white flex flex-col">
+        <div class="flex items-center space-x-3 px-3 py-2 bg-white/10 rounded-2xl">
+          <i data-lucide="search" class="w-5 h-5 text-blue-400"></i>
+          <input type="text" id="spotlight-input" oninput="querySpotlightSearch(this.value)" placeholder="Tìm ứng dụng, tệp tin..." class="w-full bg-transparent border-none text-sm font-medium focus:outline-none">
+          <kbd class="text-[9px] bg-white/15 px-1.5 py-0.5 rounded opacity-50">Esc</kbd>
+        </div>
+        <div class="mt-3 overflow-hidden" id="spotlight-results-container">
+          <span class="text-[10px] text-white/40 uppercase tracking-widest px-3 font-semibold">Gợi ý tìm kiếm</span>
+          <div class="mt-1 flex flex-col gap-0.5" id="spotlight-results-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== START MENU ==================== -->
+    <div id="start-menu" class="hidden absolute bottom-24 left-1/2 -translate-x-1/2 w-[520px] h-[550px] glass-dark text-white rounded-[32px] p-6 shadow-2xl border border-white/15 z-40 flex flex-col select-none">
+      <div class="relative mb-5 shrink-0">
+        <input type="text" id="launcher-search" oninput="filterLauncherApps(this.value)" placeholder="Tìm kiếm ứng dụng, cài đặt..." class="w-full bg-white/10 text-xs rounded-2xl pl-10 pr-4 py-2.5 text-white border border-white/5 focus:outline-none focus:bg-white/15 placeholder-white/50">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3.5 opacity-50"></i>
+      </div>
+      <div class="flex justify-between items-center mb-3 px-1 shrink-0">
+        <span class="text-xs font-bold opacity-80 uppercase tracking-wider">Ứng dụng đã ghim</span>
+      </div>
+      <div class="flex-1 overflow-y-auto pr-1">
+        <div class="grid grid-cols-4 gap-y-5 gap-x-2 text-center" id="launcher-app-grid"></div>
+      </div>
+      <!-- Footer controls -->
+      <div class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-3 text-xs">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-rose-500 to-orange-400 flex items-center justify-center font-bold text-white shadow">UX</div>
+          <div>
+            <h4 class="font-semibold text-white">Người dùng Galaxy</h4>
+            <p class="text-[9px] opacity-50">galaxy-user@nexusos.com</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="lockSystem(); toggleStartMenu();" class="p-2 hover:bg-white/10 rounded-xl transition text-indigo-400" title="Khóa máy"><i data-lucide="lock" class="w-4.5 h-4.5"></i></button>
+          <button onclick="restartSystem()" class="p-2 hover:bg-white/10 rounded-xl transition text-yellow-400" title="Khởi động lại"><i data-lucide="rotate-cw" class="w-4.5 h-4.5"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== BOTTOM HYBRID TASKBAR (Centered Pill Dock) ==================== -->
+    <footer class="w-full h-18 pb-4 absolute bottom-0 left-0 right-0 flex items-center justify-center z-40 select-none space-x-3 pointer-events-none">
+      <!-- Part 1: Start Square Menu Launcher (WebOS style) -->
+      <div class="pointer-events-auto h-12 w-12 glass hover:bg-blue-600/20 border border-white/15 rounded-2xl flex items-center justify-center text-white text-lg cursor-pointer transition duration-200 active:scale-95 shadow-2xl group" onclick="toggleStartMenu()" title="Start Launcher">
+        <div class="grid grid-cols-2 gap-1 w-5.5 h-5.5">
+          <div class="w-2 h-2 bg-white/95 rounded-[2px] transition-transform group-hover:scale-90"></div>
+          <div class="w-2 h-2 bg-white/80 rounded-[2px] transition-transform group-hover:scale-95"></div>
+          <div class="w-2 h-2 bg-white/80 rounded-[2px] transition-transform group-hover:scale-95"></div>
+          <div class="w-2 h-2 bg-white/95 rounded-[2px] transition-transform group-hover:scale-90"></div>
+        </div>
+      </div>
+
+      <!-- Part 2: Centered App Taskbar capsule (One UI dock) -->
+      <div class="pointer-events-auto h-12 bg-black/40 backdrop-blur-xl border border-white/15 rounded-2xl px-4 flex items-center space-x-3 shadow-2xl">
+        <!-- Files -->
+        <button onclick="openApp('files')" id="dock-item-files" class="relative group w-9 h-9 bg-gradient-to-tr from-amber-500 to-yellow-400 squircle flex items-center justify-center shadow transition-all duration-300 hover:-translate-y-1">
+          <i data-lucide="folder" class="w-5 h-5 text-white"></i>
+          <span id="indicator-files" class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full"></span>
+        </button>
+        <!-- Store -->
+        <button onclick="openApp('store')" id="dock-item-store" class="relative group w-9 h-9 bg-gradient-to-tr from-pink-500 to-purple-500 squircle flex items-center justify-center shadow transition-all duration-300 hover:-translate-y-1">
+          <i data-lucide="shopping-bag" class="w-5 h-5 text-white"></i>
+          <span id="indicator-store" class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full"></span>
+        </button>
+        <!-- Browser -->
+        <button onclick="openApp('browser')" id="dock-item-browser" class="relative group w-9 h-9 bg-gradient-to-tr from-blue-500 to-cyan-400 squircle flex items-center justify-center shadow transition-all duration-300 hover:-translate-y-1">
+          <i data-lucide="globe" class="w-5 h-5 text-white"></i>
+          <span id="indicator-browser" class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full"></span>
+        </button>
+        <!-- Settings -->
+        <button onclick="openApp('settings')" id="dock-item-settings" class="relative group w-9 h-9 bg-gradient-to-tr from-gray-500 to-slate-400 squircle flex items-center justify-center shadow transition-all duration-300 hover:-translate-y-1">
+          <i data-lucide="settings" class="w-5 h-5 text-white"></i>
+          <span id="indicator-settings" class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full"></span>
+        </button>
+        <!-- Calculator -->
+        <button onclick="openApp('calculator')" id="dock-item-calculator" class="relative group w-9 h-9 bg-gradient-to-tr from-emerald-500 to-teal-400 squircle flex items-center justify-center shadow transition-all duration-300 hover:-translate-y-1">
+          <i data-lucide="calculator" class="w-5 h-5 text-white"></i>
+          <span id="indicator-calculator" class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full"></span>
+        </button>
+
+        <span class="h-6 w-[1px] bg-white/10"></span>
+
+        <!-- Task View Button (Multitasking View) -->
+        <button onclick="toggleTaskView()" class="w-9 h-9 hover:bg-white/10 rounded-xl flex items-center justify-center text-blue-400 transition" title="Đa nhiệm Task View">
+          <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- TOAST FEEDBACK -->
+  <div id="system-toast" class="fixed top-14 left-1/2 -translate-x-1/2 bg-slate-900/90 border border-white/20 text-white px-4 py-2 rounded-2xl shadow-xl text-xs z-50 pointer-events-none transition duration-300 transform scale-90 opacity-0 flex items-center gap-2">
+    <i data-lucide="info" class="w-4 h-4 text-sky-400"></i>
+    <span id="toast-text">Hệ thống đang hoạt động ổn định</span>
+  </div>
+
+  <!-- ==================== LOGIC JAVASCRIPT ==================== -->
+  <script>
+    let activeAppId = null;
+    let windowZIndex = 20;
+    const activeWindows = {};
+    let isDarkMode = true;
+    let brightnessVal = 100;
+    let isBatterySaver = false;
+    let currentStoreCategory = 'all';
+    let currentFilesTab = 'images';
+    let isLocked = true;
+    let isTaskView = false;
+    let inactivityTimer;
+
+    // Draggables
+    let currentDraggingWindow = null;
+    let dragStartX = 0, dragStartY = 0;
+    let dragWindowStartLeft = 0, dragWindowStartTop = 0;
+
+    // Resizing
+    let currentResizingWindow = null;
+    let resizeStartX = 0, resizeStartY = 0;
+    let resizeStartWidth = 0, resizeStartHeight = 0;
+
+    // Browser tabs
+    let browserTabs = [
+      { id: 1, title: 'Google Search', url: 'https://www.google.com/search?igu=1' }
+    ];
+    let activeBrowserTabId = 1;
+    let tabIdCounter = 1;
+
+    // Snapping configuration state
+    const windowStates = {};
+
+    // Dynamic wallpapers database
+    const wallpapers = [
+      { name: 'Neon Cyberpunk Horizon', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200' },
+      { name: 'Deep Space Nebula', url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1200' },
+      { name: 'Emerald Forest Mist', url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1200' },
+      { name: 'Cosmic Purple Sunset', url: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=1200' }
+    ];
+    let wallpaperIdx = 0;
+
+    const ALL_APPS = [
+      { id: 'browser', name: 'Trình duyệt Web', icon: 'globe', gradient: 'from-blue-500 to-cyan-400', category: 'productivity' },
+      { id: 'files', name: 'Tệp tin', icon: 'folder', gradient: 'from-amber-500 to-yellow-400', category: 'productivity' },
+      { id: 'store', name: 'Galaxy Store', icon: 'shopping-bag', gradient: 'from-pink-500 to-purple-500', category: 'productivity' },
+      { id: 'settings', name: 'Cài đặt', icon: 'settings', gradient: 'from-gray-500 to-slate-400', category: 'productivity' },
+      { id: 'calculator', name: 'Máy tính', icon: 'calculator', gradient: 'from-emerald-500 to-teal-400', category: 'tools' }
+    ];
+
+    const FILE_DATABASE = {
+      images: [
+        { name: 'Vịnh_Hạ_Long.jpg', size: '2.4 MB', icon: 'image', color: 'text-emerald-400', img: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=300&q=80' },
+        { name: 'Hoàng_hôn_Đồng_Nai.png', size: '1.8 MB', icon: 'image', color: 'text-emerald-400', img: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=300&q=80' }
+      ],
+      documents: [
+        { name: 'Ke_hoach_NexusOS.docx', size: '45 KB', icon: 'file-text', color: 'text-purple-400' }
+      ]
+    };
+
+    window.onload = function() {
+      lucide.createIcons();
+      updateClock();
+      setInterval(updateClock, 10000);
+
+      buildCalendar();
+      startSystemResourceSimulation();
+
+      renderFiles();
+      renderStoreApps();
+      renderLauncherApps();
+      renderBrowserTabs();
+      renderSettingsWallpapers();
+
+      enableIconDragging();
+
+      // Drag and Snapping init setup
+      enableSnappingSupport('win-settings', 'settings-header');
+      enableSnappingSupport('win-files', 'files-header');
+      enableSnappingSupport('win-browser', 'browser-header');
+      enableSnappingSupport('win-calculator', 'calc-header');
+      enableSnappingSupport('win-store', 'store-header');
+
+      document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.code === 'Space') {
+          e.preventDefault();
+          toggleSpotlight();
+        }
+        if (e.key === 'Escape') {
+          hideSpotlight();
+          closeAllMenus();
+        }
+      });
+    }
+
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+      const ampm = hours >= 12 ? 'CH' : 'SA';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      minutes = minutes < 10 ? '0' + minutes : minutes;
+      
+      const strTime = hours + ':' + minutes + ' ' + ampm;
+      document.getElementById('top-clock').textContent = strTime;
+      
+      const lockClock = document.getElementById('lock-clock');
+      if (lockClock) lockClock.textContent = hours + ':' + minutes;
+    }
+
+    function buildCalendar() {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth();
+      const today = now.getDate();
+      
+      const monthNames = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
+      document.getElementById('widget-month-label').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+      const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+      const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      const daysContainer = document.getElementById('widget-calendar-days');
+      daysContainer.innerHTML = '';
+
+      for (let i = 0; i < firstDayIndex; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'opacity-0';
+        daysContainer.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.textContent = day;
+        dayCell.className = 'py-1 rounded-full font-medium transition cursor-pointer hover:bg-white/10';
+        
+        if (day === today) {
+          dayCell.className = 'py-1 rounded-full bg-rose-500 text-white font-bold shadow-lg shadow-rose-500/30';
+        }
+        daysContainer.appendChild(dayCell);
+      }
+    }
+
+    function startSystemResourceSimulation() {
+      setInterval(() => {
+        const cpuVal = Math.floor(Math.random() * 25) + 5;
+        const ramVal = Math.floor(Math.random() * 3) + 39;
+        
+        const widgetRam = document.getElementById('widget-ram-percent');
+        const widgetRamBar = document.getElementById('widget-ram-bar');
+        if (widgetRam && widgetRamBar) {
+          widgetRam.textContent = ramVal + '%';
+          widgetRamBar.style.width = ramVal + '%';
+        }
+      }, 3000);
+    }
+
+    // LOCKSCREEN CONTROLS
+    function showPinInput() {
+      document.getElementById('tap-to-unlock').classList.add('hidden');
+      const userCard = document.getElementById('lock-user-card');
+      userCard.classList.remove('hidden');
+      setTimeout(() => {
+        userCard.classList.remove('translate-y-4', 'opacity-0');
+        document.getElementById('pin-input').focus();
+      }, 50);
+    }
+
+    function handleUnlockSubmit(event) {
+      event.preventDefault();
+      const pinVal = document.getElementById('pin-input').value;
+      if (pinVal === '1234' || pinVal === '') {
+        unlockSystem();
+      } else {
+        showToast('Mã PIN không đúng! Thử lại (PIN mặc định: 1234 hoặc ấn trực tiếp Enter)');
+        document.getElementById('pin-input').value = '';
+      }
+    }
+
+    function unlockSystem() {
+      document.getElementById('lock-screen').classList.add('lockscreen-up');
+      isLocked = false;
+      resetInactivityTimer();
+      showToast('Đã đăng nhập thành công vào NexusOS.');
+    }
+
+    function lockSystem() {
+      document.getElementById('pin-input').value = '';
+      document.getElementById('lock-user-card').classList.add('hidden', 'translate-y-4', 'opacity-0');
+      document.getElementById('tap-to-unlock').classList.remove('hidden');
+      document.getElementById('lock-screen').classList.remove('lockscreen-up');
+      isLocked = true;
+      clearTimeout(inactivityTimer);
+    }
+
+    function resetInactivityTimer() {
+      if (isLocked) return;
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        lockSystem();
+        showToast('Màn hình tự động khóa do không hoạt động.');
+      }, 180000); // 3 minutes
+    }
+
+    ['mousemove', 'keydown', 'mousedown', 'touchstart'].forEach(evt => {
+      window.addEventListener(evt, resetInactivityTimer);
+    });
+
+    // DRAG WINDOWS AND AERO SNAPPING CONTROL
+    function enableSnappingSupport(windowId, headerId) {
+      // Record default settings states
+      if (!windowStates[windowId]) {
+        windowStates[windowId] = {
+          width: '750px',
+          height: '500px',
+          top: '15%',
+          left: '10%',
+          isSnapped: false
+        };
+      }
+    }
+
+    function startDrag(e, windowId) {
+      if (isTaskView) return;
+      focusWindow(windowId);
+
+      const winEl = document.getElementById(windowId);
+      if (winEl.classList.contains('maximized')) return;
+
+      currentDraggingWindow = winEl;
+      
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dragWindowStartLeft = parseInt(window.getComputedStyle(winEl).left, 10) || 0;
+      dragWindowStartTop = parseInt(window.getComputedStyle(winEl).top, 10) || 0;
+
+      // Unsnap if dragging snapped window
+      if (windowStates[windowId] && windowStates[windowId].isSnapped) {
+        unsnapWindow(winEl, windowId, e.clientX, e.clientY);
+        const newRect = winEl.getBoundingClientRect();
+        dragWindowStartLeft = newRect.left;
+        dragWindowStartTop = newRect.top;
+      }
+
+      document.addEventListener('mousemove', dragMove);
+      document.addEventListener('mouseup', dragEnd);
+    }
+
+    function dragMove(e) {
+      if (!currentDraggingWindow) return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+
+      const nextLeft = dragWindowStartLeft + dx;
+      const nextTop = dragWindowStartTop + dy;
+
+      currentDraggingWindow.style.left = nextLeft + 'px';
+      currentDraggingWindow.style.top = nextTop + 'px';
+
+      // Snap Preview Detection
+      const snapLayer = document.getElementById('snap-preview-layer');
+      if (e.clientX < 30) {
+        snapLayer.style.left = '8px';
+        snapLayer.style.width = 'calc(50% - 12px)';
+        snapLayer.style.top = '48px';
+        snapLayer.style.height = 'calc(100vh - 120px)';
+        snapLayer.classList.remove('hidden');
+        currentDraggingWindow.dataset.pendingSnap = 'left';
+      } else if (e.clientX > window.innerWidth - 30) {
+        snapLayer.style.left = '50%';
+        snapLayer.style.width = 'calc(50% - 8px)';
+        snapLayer.style.top = '48px';
+        snapLayer.style.height = 'calc(100vh - 120px)';
+        snapLayer.classList.remove('hidden');
+        currentDraggingWindow.dataset.pendingSnap = 'right';
+      } else {
+        snapLayer.classList.add('hidden');
+        currentDraggingWindow.dataset.pendingSnap = '';
+      }
+    }
+
+    function dragEnd() {
+      if (currentDraggingWindow) {
+        const snapDir = currentDraggingWindow.dataset.pendingSnap;
+        const windowId = currentDraggingWindow.id;
+        
+        if (snapDir) {
+          snapWindow(currentDraggingWindow, windowId, snapDir);
+        }
+        
+        document.getElementById('snap-preview-layer').classList.add('hidden');
+        currentDraggingWindow.dataset.pendingSnap = '';
+      }
+      currentDraggingWindow = null;
+      document.removeEventListener('mousemove', dragMove);
+      document.removeEventListener('mouseup', dragEnd);
+    }
+
+    function snapWindow(win, windowId, direction) {
+      // Preserve pre-snap geometry
+      if (windowStates[windowId] && !windowStates[windowId].isSnapped) {
+        windowStates[windowId].width = win.style.width;
+        windowStates[windowId].height = win.style.height;
+        windowStates[windowId].top = win.style.top;
+        windowStates[windowId].left = win.style.left;
+      }
+
+      win.style.height = 'calc(100vh - 48px - 88px)';
+      win.style.top = '48px';
+      win.style.width = 'calc(50% - 12px)';
+
+      if (direction === 'left') {
+        win.style.left = '8px';
+      } else {
+        win.style.left = 'calc(50% + 4px)';
+      }
+
+      if (windowStates[windowId]) windowStates[windowId].isSnapped = true;
+      showToast('Cửa sổ đã được snap chia đôi màn hình.');
+    }
+
+    function unsnapWindow(win, windowId, clientX, clientY) {
+      const state = windowStates[windowId];
+      if (!state) return;
+
+      win.style.width = state.width || '750px';
+      win.style.height = state.height || '500px';
+
+      const widthPx = parseInt(win.style.width);
+      win.style.left = `${clientX - (widthPx / 2)}px`;
+      win.style.top = `${clientY - 15}px`;
+
+      state.isSnapped = false;
+    }
+
+    // DRAGGABLE RESIZE
+    function startResize(e, windowId) {
+      e.preventDefault();
+      e.stopPropagation();
+      focusWindow(windowId);
+
+      const winEl = document.getElementById(windowId);
+      if (winEl.classList.contains('maximized')) return;
+
+      currentResizingWindow = winEl;
+      resizeStartX = e.clientX;
+      resizeStartY = e.clientY;
+      resizeStartWidth = parseInt(window.getComputedStyle(winEl).width, 10);
+      resizeStartHeight = parseInt(window.getComputedStyle(winEl).height, 10);
+
+      document.addEventListener('mousemove', resizeMove);
+      document.addEventListener('mouseup', resizeEnd);
+    }
+
+    function resizeMove(e) {
+      if (!currentResizingWindow) return;
+      const dw = e.clientX - resizeStartX;
+      const dh = e.clientY - resizeStartY;
+
+      currentResizingWindow.style.width = Math.max(320, resizeStartWidth + dw) + 'px';
+      currentResizingWindow.style.height = Math.max(240, resizeStartHeight + dh) + 'px';
+    }
+
+    function resizeEnd() {
+      currentResizingWindow = null;
+      document.removeEventListener('mousemove', resizeMove);
+      document.removeEventListener('mouseup', resizeEnd);
+    }
+
+    function focusWindow(windowId) {
+      windowZIndex += 1;
+      const win = document.getElementById(windowId);
+      if (win) {
+        win.style.zIndex = windowZIndex;
+        document.querySelectorAll('[id^="win-"]').forEach(w => w.classList.remove('window-active'));
+        win.classList.add('window-active');
+      }
+      activeAppId = windowId;
+    }
+
+    // APP LAUNCHERS
+    function openApp(appKey) {
+      closeAllMenus();
+      hideSpotlight();
+
+      const winId = `win-${appKey}`;
+      const winEl = document.getElementById(winId);
+      if (!winEl) {
+        showToast(`Ứng dụng ${appKey} chưa được thiết lập.`);
+        return;
+      }
+
+      winEl.classList.remove('hidden');
+      focusWindow(winId);
+      activeWindows[appKey] = true;
+
+      const indicator = document.getElementById(`indicator-${appKey}`);
+      if (indicator) indicator.classList.remove('hidden');
+    }
+
+    function closeApp(appKey) {
+      const winId = `win-${appKey}`;
+      const winEl = document.getElementById(winId);
+      if (winEl) winEl.classList.add('hidden');
+
+      activeWindows[appKey] = false;
+      const indicator = document.getElementById(`indicator-${appKey}`);
+      if (indicator) indicator.classList.add('hidden');
+    }
+
+    function minimizeWindow(windowId) {
+      document.getElementById(windowId).classList.add('hidden');
+    }
+
+    function maximizeWindow(windowId) {
+      const winEl = document.getElementById(windowId);
+      if (winEl.classList.contains('maximized')) {
+        winEl.classList.remove('maximized');
+        winEl.style.width = '750px';
+        winEl.style.height = '500px';
+        winEl.style.borderRadius = '1.5rem';
+      } else {
+        winEl.classList.add('maximized');
+        winEl.style.top = '48px'; 
+        winEl.style.left = '0px';
+        winEl.style.width = '100vw';
+        winEl.style.height = 'calc(100vh - 48px - 88px)';
+        winEl.style.borderRadius = '0px';
+      }
+    }
+
+    // MULTITASKING TASK VIEW CONTROLLER
+    function toggleTaskView() {
+      const overlay = document.getElementById('task-view-overlay');
+      const wrapper = document.getElementById('system-wrapper');
+      const grid = document.getElementById('task-view-grid');
+
+      if (isTaskView) {
+        overlay.classList.add('opacity-0');
+        wrapper.classList.remove('task-view-active');
+        setTimeout(() => {
+          overlay.classList.add('hidden');
+          isTaskView = false;
+        }, 300);
+      } else {
+        grid.innerHTML = '';
+        const allWindows = document.querySelectorAll('[id^="win-"]');
+        let openCount = 0;
+
+        allWindows.forEach(win => {
+          if (!win.classList.contains('hidden')) {
+            openCount++;
+            const winId = win.id;
+            const appKey = winId.replace('win-', '');
+            const app = ALL_APPS.find(a => a.id === appKey) || { name: 'Ứng dụng', icon: 'window' };
+
+            const card = document.createElement('div');
+            card.className = 'glass hover:bg-white/10 rounded-2xl p-4 border border-white/10 flex flex-col justify-between h-44 cursor-pointer shadow-xl transition-all duration-300 transform hover:-translate-y-1';
+            card.innerHTML = `
+              <div class="flex items-center justify-between mb-4 text-white">
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="${app.icon || 'window'}" class="w-4 h-4 text-blue-400"></i>
+                  <span class="text-xs font-bold truncate max-w-[150px]">${app.name}</span>
+                </div>
+                <button class="bg-white/5 hover:bg-red-600 p-1 rounded-lg transition text-[10px]" onclick="closeAppFromTaskView(event, '${appKey}')">
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <div class="flex-1 rounded-lg bg-black/40 border border-white/5 flex items-center justify-center text-white/30 text-xs italic">
+                Xem thu nhỏ...
+              </div>
+            `;
+            card.onclick = () => {
+              toggleTaskView();
+              openApp(appKey);
+            };
+            grid.appendChild(card);
+          }
+        });
+
+        if (openCount === 0) {
+          grid.innerHTML = `
+            <div class="col-span-full flex flex-col items-center justify-center text-white/40 h-48 space-y-2">
+              <i data-lucide="folder-open" class="w-8 h-8"></i>
+              <p class="text-sm">Không có ứng dụng nào mở rộng.</p>
+            </div>
+          `;
+        }
+
+        overlay.classList.remove('hidden');
+        wrapper.classList.add('task-view-active');
+        setTimeout(() => {
+          overlay.classList.remove('opacity-0');
+          isTaskView = true;
+          lucide.createIcons();
+        }, 50);
+      }
+    }
+
+    function closeAppFromTaskView(e, appKey) {
+      e.stopPropagation();
+      closeApp(appKey);
+      toggleTaskView();
+      toggleTaskView();
+    }
+
+    // TOP MENUS TOGGLE
+    function toggleMenu(menuId) {
+      const menu = document.getElementById(menuId);
+      const isOpen = !menu.classList.contains('hidden');
+      closeAllMenus();
+      if (!isOpen) menu.classList.remove('hidden');
+    }
+
+    function toggleStartMenu() {
+      const start = document.getElementById('start-menu');
+      const isOpen = !start.classList.contains('hidden');
+      closeAllMenus();
+      if (!isOpen) start.classList.remove('hidden');
+    }
+
+    function closeAllMenus() {
+      document.getElementById('system-menu').classList.add('hidden');
+      document.getElementById('control-center').classList.add('hidden');
+      document.getElementById('start-menu').classList.add('hidden');
+    }
+
+    // SPOTLIGHT SEARCH
+    function toggleSpotlight() {
+      const spotlight = document.getElementById('spotlight');
+      if (spotlight.classList.contains('hidden')) {
+        closeAllMenus();
+        spotlight.classList.remove('hidden');
+        const input = document.getElementById('spotlight-input');
+        input.value = '';
+        input.focus();
+        querySpotlightSearch('');
+      } else {
+        spotlight.classList.add('hidden');
+      }
+    }
+
+    function hideSpotlight() {
+      document.getElementById('spotlight').classList.add('hidden');
+    }
+
+    function querySpotlightSearch(queryString) {
+      const q = queryString.toLowerCase().trim();
+      const list = document.getElementById('spotlight-results-list');
+      list.innerHTML = '';
+
+      const matched = ALL_APPS.filter(app => app.name.toLowerCase().includes(q));
+
+      if (matched.length === 0) {
+        list.innerHTML = `<p class="text-xs text-white/50 text-center py-4">Không tìm thấy ứng dụng.</p>`;
+        return;
+      }
+
+      matched.forEach(app => {
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between p-2 rounded-2xl hover:bg-white/10 cursor-pointer transition select-none";
+        row.onclick = () => {
+          openApp(app.id);
+          hideSpotlight();
+        };
+
+        row.innerHTML = `
+          <div class="flex items-center gap-3 text-white">
+            <div class="w-8 h-8 bg-gradient-to-tr ${app.gradient} squircle flex items-center justify-center shadow">
+              <i data-lucide="${app.icon}" class="w-4 h-4 text-white"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold">${app.name}</p>
+            </div>
+          </div>
+        `;
+        list.appendChild(row);
+      });
+      lucide.createIcons();
+    }
+
+    // GALAXY STORE RENDER
+    function selectStoreCategory(cat) {
+      currentStoreCategory = cat;
+      renderStoreApps();
+    }
+
+    function renderStoreApps() {
+      const grid = document.getElementById('store-apps-grid');
+      grid.innerHTML = '';
+
+      ALL_APPS.forEach(app => {
+        const item = document.createElement('div');
+        item.className = "glass-card rounded-2xl p-3 flex items-center justify-between text-white";
+        item.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-tr ${app.gradient} squircle flex items-center justify-center shadow">
+              <i data-lucide="${app.icon}" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold">${app.name}</p>
+              <p class="text-[9px] opacity-50">One UI App • v1.0</p>
+            </div>
+          </div>
+          <button onclick="installAppToDesktop('${app.id}')" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded-xl text-[10px] font-bold transition">Tải về</button>
+        `;
+        grid.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    function installAppToDesktop(appId) {
+      showToast("Ứng dụng đã có sẵn trên thanh hệ thống.");
+    }
+
+    // MULTI-TAB BROWSER RENDER
+    function renderBrowserTabs() {
+      const container = document.getElementById('browser-tabs-container');
+      container.innerHTML = '';
+
+      browserTabs.forEach(tab => {
+        const isActive = tab.id === activeBrowserTabId;
+        const tabBtn = document.createElement('div');
+        tabBtn.className = `flex items-center space-x-2 px-3 py-1 rounded-xl text-[11px] cursor-pointer transition shrink-0 ${
+          isActive ? 'bg-white/15 text-white font-bold' : 'text-slate-300 hover:bg-white/5'
+        }`;
+        tabBtn.onclick = () => selectBrowserTab(tab.id);
+        tabBtn.innerHTML = `
+          <span class="truncate">${tab.title}</span>
+          ${browserTabs.length > 1 ? `<i data-lucide="x" class="w-3 h-3 hover:bg-white/20 rounded-full" onclick="event.stopPropagation(); closeBrowserTab(${tab.id});"></i>` : ''}
+        `;
+        container.appendChild(tabBtn);
+      });
+      lucide.createIcons();
+    }
+
+    function selectBrowserTab(tabId) {
+      activeBrowserTabId = tabId;
+      const tab = browserTabs.find(t => t.id === tabId);
+      if (tab) {
+        document.getElementById('browser-url-input').value = tab.url;
+        document.getElementById('browser-iframe').src = tab.url;
+      }
+      renderBrowserTabs();
+    }
+
+    function createNewBrowserTab() {
+      tabIdCounter++;
+      const newTab = { id: tabIdCounter, title: 'Google Search', url: 'https://www.google.com/search?igu=1' };
+      browserTabs.push(newTab);
+      selectBrowserTab(newTab.id);
+    }
+
+    function closeBrowserTab(tabId) {
+      if (browserTabs.length <= 1) return;
+      const idx = browserTabs.findIndex(t => t.id === tabId);
+      browserTabs.splice(idx, 1);
+      if (activeBrowserTabId === tabId) {
+        activeBrowserTabId = browserTabs[0].id;
+      }
+      selectBrowserTab(activeBrowserTabId);
+    }
+
+    function reloadBrowserTab() {
+      const iframe = document.getElementById('browser-iframe');
+      iframe.src = iframe.src;
+    }
+
+    function loadIframeUrl(url) {
+      if (!url.startsWith('http')) url = 'https://' + url;
+      const tab = browserTabs.find(t => t.id === activeBrowserTabId);
+      if (tab) {
+        tab.url = url;
+        tab.title = url.replace('https://', '').replace('www.', '');
+      }
+      document.getElementById('browser-iframe').src = url;
+      renderBrowserTabs();
+    }
+
+    // FILE EXPLORER FILES
+    function selectFilesTab(tab) {
+      currentFilesTab = tab;
+      renderFiles();
+    }
+
+    function renderFiles() {
+      const grid = document.getElementById('files-grid-area');
+      grid.innerHTML = '';
+      const items = FILE_DATABASE[currentFilesTab] || [];
+
+      if (currentFilesTab === 'images') {
+        const flex = document.createElement('div');
+        flex.className = 'grid grid-cols-2 gap-3';
+        items.forEach(file => {
+          const card = document.createElement('div');
+          card.className = "group relative aspect-video rounded-xl overflow-hidden cursor-pointer border border-white/5";
+          card.onclick = () => {
+            openApp('browser');
+            loadIframeUrl(file.img);
+          };
+          card.innerHTML = `
+            <img src="${file.img}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+            <div class="absolute inset-x-0 bottom-0 bg-black/60 p-2 text-[10px]">
+              <span class="block text-white truncate font-semibold">${file.name}</span>
+            </div>
+          `;
+          flex.appendChild(card);
+        });
+        grid.appendChild(flex);
+      } else {
+        items.forEach(file => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between p-2 hover:bg-white/5 rounded-xl cursor-pointer text-xs';
+          row.innerHTML = `
+            <span class="flex items-center space-x-2"><i data-lucide="file-text" class="w-4 h-4 text-purple-400"></i><span>${file.name}</span></span>
+            <span class="opacity-50">${file.size}</span>
+          `;
+          grid.appendChild(row);
+        });
+      }
+      lucide.createIcons();
+    }
+
+    // DRAG ICONS
+    function enableIconDragging() {
+      const icons = document.querySelectorAll('.desktop-icon');
+      icons.forEach(icon => {
+        icon.addEventListener('dragstart', () => icon.classList.add('dragging'));
+        icon.addEventListener('dragend', () => icon.classList.remove('dragging'));
+      });
+      const grid = document.getElementById('desktop-grid');
+      grid.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const activeDrag = document.querySelector('.dragging');
+        if (activeDrag) grid.appendChild(activeDrag);
+      });
+    }
+
+    function dragIcon(e) {}
+
+    // CALCULATOR INTERACTION
+    let calcVal = '0';
+    function pressCalc(k) {
+      const disp = document.getElementById('calc-display');
+      if (k === 'C') {
+        calcVal = '0';
+      } else if (k === '=') {
+        try {
+          calcVal = String(eval(calcVal));
+        } catch(e) {
+          calcVal = 'Error';
+        }
+      } else {
+        if (calcVal === '0') calcVal = k;
+        else calcVal += k;
+      }
+      disp.textContent = calcVal;
+    }
+
+    // LAUNCHER AND START MENU APPS
+    function renderLauncherApps() {
+      const grid = document.getElementById('launcher-app-grid');
+      grid.innerHTML = '';
+      ALL_APPS.forEach(app => {
+        const item = document.createElement('div');
+        item.className = "flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-white/10 cursor-pointer transition group";
+        item.onclick = () => {
+          openApp(app.id);
+          toggleStartMenu();
+        };
+        item.innerHTML = `
+          <div class="w-11 h-11 bg-gradient-to-tr ${app.gradient} squircle flex items-center justify-center shadow">
+            <i data-lucide="${app.icon}" class="w-5 h-5 text-white"></i>
+          </div>
+          <span class="text-[10px] mt-1.5 font-medium block truncate w-16">${app.name}</span>
+        `;
+        grid.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    function filterLauncherApps(val) {
+      const q = val.toLowerCase().trim();
+      const children = document.getElementById('launcher-app-grid').children;
+      ALL_APPS.forEach((app, index) => {
+        if (app.name.toLowerCase().includes(q)) children[index].classList.remove('hidden');
+        else children[index].classList.add('hidden');
+      });
+    }
+
+    // CONTROL CENTER & QUICK SETTINGS
+    function toggleQuickSetting(setting) {
+      if (setting === 'wifi') {
+        toggleSettingState('wifi', !document.getElementById('icon-wifi').classList.contains('text-emerald-400'));
+      } else if (setting === 'bluetooth') {
+        const bt = document.getElementById('icon-bluetooth');
+        if (bt.classList.contains('text-blue-400')) {
+          bt.className = 'w-4 h-4 text-slate-400';
+          showToast('Đã tắt Bluetooth.');
+        } else {
+          bt.className = 'w-4 h-4 text-blue-400';
+          showToast('Đã bật Bluetooth.');
+        }
+      } else if (setting === 'darkmode') {
+        isDarkMode = !isDarkMode;
+        document.getElementById('brightness-overlay').style.backgroundColor = isDarkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0)';
+        showToast(isDarkMode ? 'Đã kích hoạt Chế độ tối' : 'Đã kích hoạt Chế độ sáng');
+      }
+    }
+
+    function toggleSettingState(setting, isEnabled) {
+      const wifi = document.getElementById('icon-wifi');
+      if (setting === 'wifi') {
+        if (isEnabled) {
+          wifi.className = 'w-4 h-4 text-emerald-400';
+          showToast('Đã kết nối Wifi.');
+        } else {
+          wifi.className = 'w-4 h-4 text-rose-500';
+          showToast('Đã ngắt Wifi.');
+        }
+      }
+    }
+
+    function selectSettingTab(tab) {
+      document.getElementById('setting-panel-connection').classList.add('hidden');
+      document.getElementById('setting-panel-display').classList.add('hidden');
+      document.getElementById('setting-panel-battery').classList.add('hidden');
+      document.getElementById('setting-panel-software').classList.add('hidden');
+
+      document.querySelectorAll('.setting-tab-btn').forEach(btn => btn.classList.remove('bg-white/10', 'font-semibold'));
+
+      if (tab === 'connection-tab') {
+        document.getElementById('setting-panel-connection').classList.remove('hidden');
+        document.getElementById('tab-btn-connection').classList.add('bg-white/10', 'font-semibold');
+      } else if (tab === 'display-tab') {
+        document.getElementById('setting-panel-display').classList.remove('hidden');
+        document.getElementById('tab-btn-display').classList.add('bg-white/10', 'font-semibold');
+      } else if (tab === 'battery-tab') {
+        document.getElementById('setting-panel-battery').classList.remove('hidden');
+        document.getElementById('tab-btn-battery').classList.add('bg-white/10', 'font-semibold');
+      } else if (tab === 'software-tab') {
+        document.getElementById('setting-panel-software').classList.remove('hidden');
+        document.getElementById('tab-btn-software').classList.add('bg-white/10', 'font-semibold');
+      }
+    }
+
+    function adjustBrightness(val) {
+      brightnessVal = val;
+      const overlay = document.getElementById('brightness-overlay');
+      const opacity = (100 - val) / 120;
+      overlay.style.backgroundColor = `rgba(0, 0, 0, ${opacity})`;
+      document.getElementById('txt-brightness').textContent = val + '%';
+      document.getElementById('setting-bright-percent').textContent = val + '%';
+    }
+
+    function adjustVolume(v) {
+      document.getElementById('txt-volume').textContent = v + '%';
+    }
+
+    function setWallpaper(idx) {
+      wallpaperIdx = idx;
+      document.getElementById('desktop-body').style.backgroundImage = `url('${wallpapers[idx].url}')`;
+      showToast(`Đã thay đổi hình nền: ${wallpapers[idx].name}`);
+    }
+
+    function changeBackground() {
+      const next = (wallpaperIdx + 1) % wallpapers.length;
+      setWallpaper(next);
+    }
+
+    function renderSettingsWallpapers() {
+      const grid = document.getElementById('settings-wallpaper-grid');
+      if (grid) {
+        grid.innerHTML = wallpapers.map((wp, index) => `
+          <div class="border border-white/10 rounded-xl p-1.5 cursor-pointer hover:border-blue-500 transition" onclick="setWallpaper(${index})">
+            <div class="h-14 w-full rounded-lg bg-cover bg-center" style="background-image: url('${wp.url}')"></div>
+            <span class="text-[9px] text-white/70 block mt-1 text-center truncate">${wp.name}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => showToast('Trình duyệt chặn chế độ toàn màn hình.'));
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function toggleWidgetPanel() {
+      showToast("Các Widget đã được ghim trực tiếp lên Desktop.");
+    }
+
+    function restartSystem() {
+      showToast("Hệ thống đang khởi động lại...");
+      setTimeout(() => location.reload(), 1500);
+    }
+
+    function shutDownSystem() {
+      showToast("Đang tắt hệ thống...");
+      setTimeout(() => {
+        document.body.innerHTML = `
+          <div class="w-screen h-screen bg-black flex flex-col items-center justify-center text-white text-xs select-none space-y-4">
+            <i data-lucide="power" class="w-10 h-10 text-rose-500 animate-pulse"></i>
+            <span>NexusOS đã tắt máy an toàn. Hãy tải lại trang để khởi động lại.</span>
+          </div>
+        `;
+        lucide.createIcons();
+      }, 1500);
+    }
+
+    // TOAST
+    function showToast(text) {
+      const toast = document.getElementById('system-toast');
+      const toastText = document.getElementById('toast-text');
+      toastText.textContent = text;
+      toast.classList.remove('scale-90', 'opacity-0');
+      toast.classList.add('scale-100', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('scale-100', 'opacity-100');
+        toast.classList.add('scale-90', 'opacity-0');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
